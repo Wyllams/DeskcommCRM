@@ -6,7 +6,7 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { apiClient } from "@/lib/api/client";
 import { GATILHO_DE_DATA_DO_FUNIL } from "@/lib/automation/gatilho-de-data-do-funil";
 import { GATILHO_ETAPA_PARADA, GATILHO_SILENCIO } from "@/lib/automation/gatilhos-de-tempo";
-import type { DadosDaCaixa, TipoDeCaixa } from "@/lib/automation/desenho-da-regra";
+import type { DadosDaCaixa, ExtrasDaTela, TipoDeCaixa } from "@/lib/automation/desenho-da-regra";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { cn } from "@/lib/utils";
 import { useT } from "@/hooks/i18n/useT";
@@ -20,13 +20,12 @@ import { ACTION_LABELS, TRIGGER_LABELS, type ActionType, type TriggerEvent } fro
 
 import { VISUAL_DAS_CONDICOES, VISUAL_DO_GATILHO, visualDaAcao } from "./visual";
 
-/** O que o canvas põe em cada caixa: os dados da regra mais o rótulo da posição na fila. */
-export type DadosNaTela = DadosDaCaixa & {
-  /** "Quando", "Se", "Então · Ação 2" — a posição na fila, calculada pelo canvas. */
-  etapa?: string;
-  /** O evento do gatilho, que a caixa de condições precisa para nomear o campo. */
-  evento?: string;
-};
+/**
+ * O que o canvas põe em cada caixa: os dados da regra mais o que é só de tela —
+ * `etapa` ("Quando", "Se", "Então · Ação 2") e `eventoDaRegra`, que a caixa de
+ * condições precisa para nomear o campo.
+ */
+export type DadosNaTela = DadosDaCaixa & ExtrasDaTela;
 export type NoDaAutomacao = Node<DadosNaTela, TipoDeCaixa>;
 
 const cfg = (c: Record<string, unknown>, k: string) => (typeof c[k] === "string" ? (c[k] as string) : "");
@@ -207,7 +206,7 @@ export function CaixaDaAutomacao({ id, data, selected }: NodeProps<NoDaAutomacao
             {data.kind === "gatilho" ? (
               <DescricaoDoGatilho dados={data} />
             ) : data.kind === "condicoes" ? (
-              <DescricaoDasCondicoes dados={data} evento={data.evento ?? ""} />
+              <DescricaoDasCondicoes dados={data} evento={data.eventoDaRegra ?? ""} />
             ) : data.acao.type === "ai_decide" ? (
               t("Hoje este passo só se edita pela API")
             ) : (

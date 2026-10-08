@@ -49,6 +49,7 @@ import {
   MAXIMO_DE_ACOES,
   PROBLEMAS,
   desenhoDaRegra,
+  desenhoDaTela,
   excluirCaixa,
   excluirLigacao,
   inserirDepois,
@@ -87,17 +88,6 @@ function paraNos(desenho: Desenho): NoDaAutomacao[] {
 }
 function paraLigacoes(desenho: Desenho): Edge[] {
   return desenho.ligacoes.map((l) => ({ id: l.id, source: l.source, target: l.target }));
-}
-/** O que vai para o desenho puro: sem o que só a tela usa (etapa, evento, problemas). */
-function dadosPuros(dados: NoDaAutomacao["data"]): DadosDaCaixa {
-  const { etapa: _etapa, evento: _evento, problemas: _problemas, ...resto } = dados;
-  return resto as DadosDaCaixa;
-}
-function paraDesenho(nos: NoDaAutomacao[], ligacoes: Edge[]): Desenho {
-  return {
-    caixas: nos.map((n) => ({ id: n.id, type: n.type ?? n.data.kind, position: n.position, data: dadosPuros(n.data) })),
-    ligacoes: ligacoes.map((l) => ({ id: l.id, source: l.source, target: l.target })),
-  };
 }
 /** A "versão salva" para o aviso de alterações: nome, dados e ligações — nunca posição. */
 function retrato(nome: string, desenho: Desenho): string {
@@ -148,7 +138,7 @@ export function CanvasDaAutomacao({ regra }: Props) {
   const atualizar = useUpdateAutomationRule();
   const salvando = criar.isPending || atualizar.isPending;
 
-  const desenho = useMemo(() => paraDesenho(nos, ligacoes), [nos, ligacoes]);
+  const desenho = useMemo(() => desenhoDaTela(nos, ligacoes), [nos, ligacoes]);
   const percurso = useMemo(() => percorrer(desenho), [desenho]);
   const evento = percurso.gatilho?.data.kind === "gatilho" ? percurso.gatilho.data.evento : "";
   const sujo = retrato(nome, desenho) !== salvo;
@@ -177,7 +167,7 @@ export function CanvasDaAutomacao({ regra }: Props) {
   }, [percurso, desenho, t]);
 
   const nosNaTela = useMemo(
-    () => nos.map((n) => ({ ...n, data: { ...n.data, etapa: etapas.get(n.id), evento } })),
+    () => nos.map((n) => ({ ...n, data: { ...n.data, etapa: etapas.get(n.id), eventoDaRegra: evento } })),
     [nos, etapas, evento],
   );
   const ligacoesNaTela = useMemo(

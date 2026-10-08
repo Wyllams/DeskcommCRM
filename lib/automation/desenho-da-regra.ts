@@ -256,6 +256,39 @@ export function desenhoDaRegra(regra: RegraGravada | null): Desenho {
   return { caixas, ligacoes };
 }
 
+/* ───────────────────────── a volta da tela ───────────────────────── */
+
+/**
+ * O que a tela pendura nos dados de cada caixa só para desenhá-la. Não é regra:
+ * `desenhoDaTela` tira antes de percorrer, validar ou comparar.
+ *
+ * `eventoDaRegra` NÃO pode se chamar `evento`: a caixa de gatilho já tem um
+ * `evento`, e ele É a regra. Com o mesmo nome, tirar o campo de exibição
+ * apagava o gatilho — a caixa dizia "escolha o que dispara", a paleta não
+ * travava as ações que fecham laço e a gravação saía sem `trigger_event`.
+ */
+export type ExtrasDaTela = { etapa?: string; eventoDaRegra?: string };
+export type CaixaNaTela = {
+  id: string;
+  type?: TipoDeCaixa;
+  position: { x: number; y: number };
+  data: DadosDaCaixa & ExtrasDaTela;
+};
+
+/** Os nós do canvas de volta ao desenho: só a regra — sem o que é de tela nem os problemas da última gravação. */
+export function desenhoDaTela(
+  nos: readonly CaixaNaTela[],
+  ligacoes: readonly LigacaoDoDesenho[],
+): Desenho {
+  return {
+    caixas: nos.map((n) => {
+      const { etapa: _etapa, eventoDaRegra: _eventoDaRegra, problemas: _problemas, ...data } = n.data;
+      return { id: n.id, type: n.type ?? n.data.kind, position: n.position, data: data as DadosDaCaixa };
+    }),
+    ligacoes: ligacoes.map((l) => ({ id: l.id, source: l.source, target: l.target })),
+  };
+}
+
 /* ───────────────────────── o percurso da fila ───────────────────────── */
 
 export type Percurso = {

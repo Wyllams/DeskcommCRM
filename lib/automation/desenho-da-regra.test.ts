@@ -22,6 +22,7 @@ import {
   RECUSAS_DE_LIGACAO,
   corpoDoDesenho,
   desenhoDaRegra,
+  desenhoDaTela,
   excluirCaixa,
   inserirDepois,
   ligar,
@@ -173,6 +174,34 @@ describe("ida e volta: abrir no designer e salvar sem mexer não muda a regra", 
     expect(r.ok).toBe(false);
     expect(r.problemas).toContainEqual({ caixa: ID_DO_GATILHO, mensagem: PROBLEMAS.semAcao });
     expect(r.problemas).toContainEqual({ caixa: ID_DO_GATILHO, mensagem: PROBLEMAS.semEvento });
+  });
+});
+
+describe("a volta pela tela: o que só a tela usa não apaga a regra", () => {
+  /** Os nós como o canvas os entrega: a regra mais a etapa, o evento da regra e os problemas da última gravação. */
+  const naTela = (d: Desenho, evento: string) =>
+    d.caixas.map((c) => ({
+      ...c,
+      data: { ...c.data, etapa: "Quando", eventoDaRegra: evento, problemas: [{ caixa: c.id, mensagem: "da gravação anterior" }] },
+    }));
+
+  it.each(REGRAS)("%s", (nome, regra) => {
+    const desenho = desenhoDaRegra(regra);
+    const volta = desenhoDaTela(naTela(desenho, regra.trigger_event), desenho.ligacoes);
+    expect(volta).toEqual(desenho);
+    expect(validarDesenho({ nome, desenho: volta, regraGravada: regra }).corpo).toEqual(oQueAApiGrava(nome, regra));
+  });
+
+  it("o gatilho de ganho continua de ganho depois da tela — é dele que a paleta tira a trava de laço", () => {
+    const regra: RegraGravada = {
+      trigger_event: "lead.won",
+      trigger_config: {},
+      conditions: [],
+      actions: [{ type: "add_tag", config: { tags: ["ganho"] } }],
+    };
+    const desenho = desenhoDaRegra(regra);
+    const gatilho = percorrer(desenhoDaTela(naTela(desenho, "lead.won"), desenho.ligacoes)).gatilho;
+    expect(gatilho?.data).toMatchObject({ kind: "gatilho", evento: "lead.won" });
   });
 });
 
